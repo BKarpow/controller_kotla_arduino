@@ -130,7 +130,7 @@ void readData() {
   int potValTemp = potVal;
   if (timerPotVal.tick()) {
     potVal = analogRead(A0);
-    potValByte = map(potVal, 0, 1023, 20, 75); // potVal = map(potVal, 0, 1023, 45, 72);
+    potValByte = map(potVal, 0, 1023, trasholdTempReleActibe, 75); // potVal = map(potVal, 0, 1023, 45, 72);
     
   }
   dspPot();
@@ -252,7 +252,8 @@ void piBuzz() {
 
 void enableRele() {
   if (tempNTC < trasholdTempReleActibe ) { 
-   dspe(4);
+    disableRele();
+    dspe(4);
     // dushActive = 0;
   } else {
     digitalWrite(RELE_PIN, LOW);
