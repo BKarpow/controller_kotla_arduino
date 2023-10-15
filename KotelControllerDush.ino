@@ -5,9 +5,12 @@
 #include <GyverNTC.h>
 #include <EEPROM.h>
 #include <TimerMs.h>
+#include <DS_raw.h>
+#include <microDS18B20.h>
+#include <microOneWire.h>
 
 TimerMs timerHold(3000, 1, 0);
-TimerMs timerNTC(500, 1, 0);
+TimerMs timerNTC(1000, 1, 0);
 TimerMs timerPotVal(250, 1, 0);
 TimerMs timerShowError(5000, 1, 1);
 
@@ -23,9 +26,11 @@ byte iteratorTriplePisk = 0;
 #define DIO 6 //Display
 #define BLU_LED 9 // Blu led intocator
 
+
 GButton butt1(BTN_PIN);
-GyverNTC therm(1, 10000, 3450);
+// GyverNTC therm(1, 10000, 3450);
 TM1637Display display(CLK, DIO);
+MicroDS18B20<10> sensor; // DS18B20 Digital pin 10
 
 // uint32_t timerHold; // для таймеру утримання кнопки
 // uint16_t periodTimerHold = 3000; // період за який рахуєтся одне утримання кнопки
@@ -89,7 +94,7 @@ void loop() {
   if (tempNTC <= 0 || tempNTC >= 95)  {
     dspe(1);
     // alarmBuzz();
-    Serial.println("Alarm !");
+    Serial.println(tempNTC);
   } else {
     //checks
     checkTemp();
@@ -135,7 +140,8 @@ void readData() {
   }
   dspPot();
   if (timerNTC.tick()) {
-    tempNTC = int(therm.getTempAverage());
+    // tempNTC = int(therm.getTempAverage());
+    tempNTC = getTemoDs18b20();
     displayTemp(tempNTC);
     dspTrashold();
   }
@@ -307,6 +313,7 @@ void displayTemp(int temp) {
     dsp[0] = SEG_B | SEG_C | SEG_D | SEG_E | SEG_G; // d
     dsp[1] = SEG_E | SEG_D | SEG_C ; // u
   }
+  if (timerShowError.tick() && showError) showError = 0;
   if (!showValPot && !showTrashold && !showError) display.setSegments(dsp);
 }
 
@@ -376,5 +383,14 @@ void triplePiskHelper() {
     piBuzz();
     iteratorTriplePisk++;
   }
+}
+
+int getTemoDs18b20() {
+  uint16_t tempDs = 0;
+  sensor.requestTemp();
+  if (sensor.readTemp()) tempDs = int(sensor.getTemp());
+  else tempDs = -273;
+  return tempDs;
+
 }
 
